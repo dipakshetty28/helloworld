@@ -3,52 +3,60 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as cp from 'child_process';
 
-import { CharStreams, CommonTokenStream, RuleContext } from 'antlr4';
-import JavaLexer  from './JavaLexer';
-import JavaParser from './JavaParser'
-import { ClassDeclarationContext, VariableDeclaratorIdContext } from './JavaParser';
-
-function extractJavaInfo(input: string): { classes: string[], variables: string[] } {
-    const chars = CharStreams.fromString(input);
-    const lexer = new JavaLexer(chars);
-    const tokens = new CommonTokenStream(lexer);
-    const parser = new JavaParser(tokens);
-    const tree = parser.compilationUnit();
-
-    const classes: string[] = [];
-    const variables: string[] = [];
-
-    // Extract class names
-    findClassNames(tree, classes);
-
-    // Extract variable names
-    findVariableNames(tree, variables);
-
-    return { classes, variables };
+function runJavaParserOnWorkspace(workspacePath: string): any {
+    // const jarPath = path.join(__dirname, 'JdtParserExample.jar');
+    const jarPath = path.join('C:\\Users\\dipak\\helloworld\\JdtParserExample.jar');
+    const command = `java -jar ${jarPath} ${workspacePath}`;
+    const output = cp.execSync(command, { encoding: 'utf8' });
+    return JSON.parse(output);
 }
+// import { CharStreams, CommonTokenStream, RuleContext } from 'antlr4';
+// import JavaLexer  from './JavaLexer';
+// import JavaParser from './JavaParser'
+// import { ClassDeclarationContext, VariableDeclaratorIdContext } from './JavaParser';
 
-function findClassNames(node: RuleContext, classes: string[]): void {
-    if (node instanceof ClassDeclarationContext && node.identifier()) {
-        classes.push(node.identifier().getText());
-    }
-    // if (node.children) {
-    //     for (const child of node.children) {
-    //         if (child instanceof RuleContext) {
-    //             findClassNames(child, classes);
-    //         }
-    //     }
-    // }
-}
+// function extractJavaInfo(input: string): { classes: string[], variables: string[] } {
+//     const chars = CharStreams.fromString(input);
+//     const lexer = new JavaLexer(chars);
+//     const tokens = new CommonTokenStream(lexer);
+//     const parser = new JavaParser(tokens);
+//     const tree = parser.compilationUnit();
 
-function findVariableNames(node: RuleContext, variables: string[]): void {
-    if (node instanceof VariableDeclaratorIdContext && node.identifier()) {
-        variables.push(node.identifier().getText());
-    }
-    // for (let i = 0; i < node.childCount; i++) {
-    //     findVariableNames(node.getChild(i), variables);
-    // }
-}
+//     const classes: string[] = [];
+//     const variables: string[] = [];
+
+//     // Extract class names
+//     findClassNames(tree, classes);
+
+//     // Extract variable names
+//     findVariableNames(tree, variables);
+
+//     return { classes, variables };
+// }
+
+// function findClassNames(node: RuleContext, classes: string[]): void {
+//     if (node instanceof ClassDeclarationContext && node.identifier()) {
+//         classes.push(node.identifier().getText());
+//     }
+//     // if (node.children) {
+//     //     for (const child of node.children) {
+//     //         if (child instanceof RuleContext) {
+//     //             findClassNames(child, classes);
+//     //         }
+//     //     }
+//     // }
+// }
+
+// function findVariableNames(node: RuleContext, variables: string[]): void {
+//     if (node instanceof VariableDeclaratorIdContext && node.identifier()) {
+//         variables.push(node.identifier().getText());
+//     }
+//     // for (let i = 0; i < node.childCount; i++) {
+//     //     findVariableNames(node.getChild(i), variables);
+//     // }
+// }
 
 
 
@@ -299,22 +307,44 @@ function removeJavaComments(content: string): string {
 
 
 
+// export function activate(context: vscode.ExtensionContext) {
+// 	let disposable = vscode.commands.registerCommand('extension.listJavaClasses', () => {
+// 		const workspaceFolders = vscode.workspace.workspaceFolders;
+// 		if (workspaceFolders && workspaceFolders.length) {
+// 			const workspacePath = workspaceFolders[0].uri.fsPath;
+// 			const nonMatchedClasses = getClassNamesNotMatchingRules(workspacePath);
+// 			writeNonMatchingClassNamesToJSON(workspacePath, nonMatchedClasses);
+// 			const nonMatchedVariables = getVariablesNotMatchingRules(workspacePath);
+// 			writeNonMatchingVariablesToJSON(workspacePath, nonMatchedVariables);
+// 		} else {
+// 			vscode.window.showErrorMessage('No workspace found!');
+// 		}
+// 	});
+
+// 	context.subscriptions.push(disposable);
+// }
+
 export function activate(context: vscode.ExtensionContext) {
-	let disposable = vscode.commands.registerCommand('extension.listJavaClasses', () => {
-		const workspaceFolders = vscode.workspace.workspaceFolders;
-		if (workspaceFolders && workspaceFolders.length) {
-			const workspacePath = workspaceFolders[0].uri.fsPath;
-			const nonMatchedClasses = getClassNamesNotMatchingRules(workspacePath);
-			writeNonMatchingClassNamesToJSON(workspacePath, nonMatchedClasses);
-			const nonMatchedVariables = getVariablesNotMatchingRules(workspacePath);
-			writeNonMatchingVariablesToJSON(workspacePath, nonMatchedVariables);
-		} else {
-			vscode.window.showErrorMessage('No workspace found!');
-		}
-	});
+    let disposable = vscode.commands.registerCommand('extension.listJavaClasses', () => {
+        const workspaceFolders = vscode.workspace.workspaceFolders;
+        if (workspaceFolders && workspaceFolders.length) {
+            const workspacePath = workspaceFolders[0].uri.fsPath;
+            const parsedResults = runJavaParserOnWorkspace(workspacePath);
+            
+            // The Java class should return a structure like:
+            // {
+            //     nonMatchingClasses: [...],
+            //     nonMatchingVariables: [...]
+            // }
+            
+            writeNonMatchingClassNamesToJSON(workspacePath, parsedResults.nonMatchingClasses);
+            writeNonMatchingVariablesToJSON(workspacePath, parsedResults.nonMatchingVariables);
+        } else {
+            vscode.window.showErrorMessage('No workspace found!');
+        }
+    });
 
-	context.subscriptions.push(disposable);
+    context.subscriptions.push(disposable);
 }
-
 
 
