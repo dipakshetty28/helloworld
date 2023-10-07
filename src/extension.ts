@@ -13,26 +13,26 @@ function runJavaParserOnWorkspace(workspacePath: string): any {
 	return JSON.parse(output);
 }
 
-function getClassNamesFromJavaFile(fileContent: string): string[] {
-	const classNameRegex = /class\s+([\w]+)/g;
-	let match;
-	const classNames: string[] = [];
-	while (match = classNameRegex.exec(fileContent)) {
-		classNames.push(match[1]);
-	}
-	return classNames;
-}
+// function getClassNamesFromJavaFile(fileContent: string): string[] {
+// 	const classNameRegex = /class\s+([\w]+)/g;
+// 	let match;
+// 	const classNames: string[] = [];
+// 	while (match = classNameRegex.exec(fileContent)) {
+// 		classNames.push(match[1]);
+// 	}
+// 	return classNames;
+// }
 
-function getAllJavaClassNamesInWorkspace(workspacePath: string): string[] {
-	let results: string[] = [];
-	const javaFiles = getAllFilesInDirectory(workspacePath, '.java');
-	for (const javaFile of javaFiles) {
-		const fileContent = fs.readFileSync(javaFile, 'utf-8');
-		const classNames = getClassNamesFromJavaFile(fileContent);
-		results = results.concat(classNames);
-	}
-	return results;
-}
+// function getAllJavaClassNamesInWorkspace(workspacePath: string): string[] {
+// 	let results: string[] = [];
+// 	const javaFiles = getAllFilesInDirectory(workspacePath, '.java');
+// 	for (const javaFile of javaFiles) {
+// 		const fileContent = fs.readFileSync(javaFile, 'utf-8');
+// 		const classNames = getClassNamesFromJavaFile(fileContent);
+// 		results = results.concat(classNames);
+// 	}
+// 	return results;
+// }
 
 function getAllFilesInDirectory(dir: string, ext: string): string[] {
 	let results: string[] = [];
@@ -49,14 +49,14 @@ function getAllFilesInDirectory(dir: string, ext: string): string[] {
 	return results;
 }
 
-function writeClassNamesToJSON(workspacePath: string, classNames: string[]) {
-	const jsonFilePath = path.join(workspacePath, 'javaClasses.json');
-	const jsonData = {
-		classes: classNames
-	};
-	fs.writeFileSync(jsonFilePath, JSON.stringify(jsonData, null, 4), 'utf8');
-	vscode.window.showInformationMessage('Java Classes written to javaClasses.json!');
-}
+// function writeClassNamesToJSON(workspacePath: string, classNames: string[]) {
+// 	const jsonFilePath = path.join(workspacePath, 'javaClasses.json');
+// 	const jsonData = {
+// 		classes: classNames
+// 	};
+// 	fs.writeFileSync(jsonFilePath, JSON.stringify(jsonData, null, 4), 'utf8');
+// 	vscode.window.showInformationMessage('Java Classes written to javaClasses.json!');
+// }
 
 function readRulesFromJSON(workspacePath: string): any {
 	const jsonFilePath = path.join(workspacePath, 'rules', 'rules.json');
@@ -64,45 +64,45 @@ function readRulesFromJSON(workspacePath: string): any {
 	return JSON.parse(jsonData);
 }
 
-function getClassNamesMatchingRules(workspacePath: string): string[] {
-	const rules = readRulesFromJSON(workspacePath);
-	const filteredRules = rules.rules.filter((rule: any) => rule.type === 'style' && rule.object === 'class');
-	const classNames = getAllJavaClassNamesInWorkspace(workspacePath);
-	let matchedClassNames: string[] = [];
+// function getClassNamesMatchingRules(workspacePath: string): string[] {
+// 	const rules = readRulesFromJSON(workspacePath);
+// 	const filteredRules = rules.rules.filter((rule: any) => rule.type === 'style' && rule.object === 'class');
+// 	const classNames = getAllJavaClassNamesInWorkspace(workspacePath);
+// 	let matchedClassNames: string[] = [];
 
-	for (const rule of filteredRules) {
-		const regex = new RegExp(rule.pattern);
-		for (const className of classNames) {
-			if (regex.test(className)) {
-				matchedClassNames.push(className);
-			}
-		}
-	}
+// 	for (const rule of filteredRules) {
+// 		const regex = new RegExp(rule.pattern);
+// 		for (const className of classNames) {
+// 			if (regex.test(className)) {
+// 				matchedClassNames.push(className);
+// 			}
+// 		}
+// 	}
 
-	return matchedClassNames;
-}
+// 	return matchedClassNames;
+// }
 
-function getClassNamesNotMatchingRules(workspacePath: string) {
-	const rules = readRulesFromJSON(workspacePath);
-	const filteredRules = rules.rules.filter((rule: any) => rule.type === 'style' && rule.object === 'class');
-	const classNames = getAllJavaClassNamesInWorkspace(workspacePath);
-	let nonMatchedClasses: any[] = [];
+// function getClassNamesNotMatchingRules(workspacePath: string) {
+// 	const rules = readRulesFromJSON(workspacePath);
+// 	const filteredRules = rules.rules.filter((rule: any) => rule.type === 'style' && rule.object === 'class');
+// 	const classNames = getAllJavaClassNamesInWorkspace(workspacePath);
+// 	let nonMatchedClasses: any[] = [];
 
-	for (const rule of filteredRules) {
-		const regex = new RegExp(rule.pattern);
-		for (const className of classNames) {
-			if (!regex.test(className)) {
-				nonMatchedClasses.push({
-					className: className,
-					message: rule.message,
-					severity: rule.severity
-				});
-			}
-		}
-	}
+// 	for (const rule of filteredRules) {
+// 		const regex = new RegExp(rule.pattern);
+// 		for (const className of classNames) {
+// 			if (!regex.test(className)) {
+// 				nonMatchedClasses.push({
+// 					className: className,
+// 					message: rule.message,
+// 					severity: rule.severity
+// 				});
+// 			}
+// 		}
+// 	}
 
-	return nonMatchedClasses;
-}
+// 	return nonMatchedClasses;
+// }
 
 function writeNonMatchingClassNamesToJSON(workspacePath: string, nonMatchedClasses: any[]) {
 	const jsonFilePath = path.join(workspacePath, 'nonMatchingClasses.json');
@@ -113,33 +113,33 @@ function writeNonMatchingClassNamesToJSON(workspacePath: string, nonMatchedClass
 	vscode.window.showInformationMessage('Non-matching classes written to nonMatchingClasses.json!');
 }
 
-function getVariableNamesFromJavaFile(fileContent: string): string[] {
-	// A basic regex to match Java variable names.
-	// This might not capture all variable names accurately especially in complex Java files.
-	// const variableNameRegex = /\b(?:int|float|double|String|char|short|byte|long|boolean)[\[\] ]+([\w]+)/g;
-	// const variableNameRegex = /\b(?:int|float|double|String|char|short|byte|long|boolean)(?:\s*\[\s*\])?\s+([a-zA-Z_]\w*)/g;
-	const variableNameRegex = /(?<![public|private|protected|static|final])\s(?:byte|short|int|long|float|double|char|boolean|[A-Z]\w+)\s+([a-z]\w*)/g;
-	;
+// function getVariableNamesFromJavaFile(fileContent: string): string[] {
+// 	// A basic regex to match Java variable names.
+// 	// This might not capture all variable names accurately especially in complex Java files.
+// 	// const variableNameRegex = /\b(?:int|float|double|String|char|short|byte|long|boolean)[\[\] ]+([\w]+)/g;
+// 	// const variableNameRegex = /\b(?:int|float|double|String|char|short|byte|long|boolean)(?:\s*\[\s*\])?\s+([a-zA-Z_]\w*)/g;
+// 	const variableNameRegex = /(?<![public|private|protected|static|final])\s(?:byte|short|int|long|float|double|char|boolean|[A-Z]\w+)\s+([a-z]\w*)/g;
+// 	;
 
-	let match;
-	const variableNames: string[] = [];
-	while (match = variableNameRegex.exec(fileContent)) {
-		variableNames.push(match[1]);
-	}
-	return variableNames;
-}
+// 	let match;
+// 	const variableNames: string[] = [];
+// 	while (match = variableNameRegex.exec(fileContent)) {
+// 		variableNames.push(match[1]);
+// 	}
+// 	return variableNames;
+// }
 
-function getAllJavaVariableNamesInWorkspace(workspacePath: string): string[] {
-	let results: string[] = [];
-	const javaFiles = getAllFilesInDirectory(workspacePath, '.java');
-	for (const javaFile of javaFiles) {
-		const fileContent = fs.readFileSync(javaFile, 'utf8');
-		const contentWithoutComments = removeJavaComments(fileContent);
-		const variableNames = getVariableNamesFromJavaFile(contentWithoutComments);
-		results = results.concat(variableNames);
-	}
-	return results;
-}
+// function getAllJavaVariableNamesInWorkspace(workspacePath: string): string[] {
+// 	let results: string[] = [];
+// 	const javaFiles = getAllFilesInDirectory(workspacePath, '.java');
+// 	for (const javaFile of javaFiles) {
+// 		const fileContent = fs.readFileSync(javaFile, 'utf8');
+// 		const contentWithoutComments = removeJavaComments(fileContent);
+// 		const variableNames = getVariableNamesFromJavaFile(contentWithoutComments);
+// 		results = results.concat(variableNames);
+// 	}
+// 	return results;
+// }
 
 function getVariablePositionInText(text: string, variableName: string): { row: number, col: number } | null {
 	const lines = text.split('\n');
@@ -162,41 +162,53 @@ function createVSCodeHyperlink(filePath: string, row: number, col: number): stri
 }
 
 
-function getVariablesNotMatchingRules(workspacePath: string) {
-	const rules = readRulesFromJSON(workspacePath);
-	const filteredRules = rules.rules.filter((rule: any) => rule.type === 'style' && rule.object === 'variable');
-	const variableNames = getAllJavaVariableNamesInWorkspace(workspacePath);
-	let nonMatchedVariables: any[] = [];
+// function getVariablesNotMatchingRules(workspacePath: string) {
+// 	const rules = readRulesFromJSON(workspacePath);
+// 	const filteredRules = rules.rules.filter((rule: any) => rule.type === 'style' && rule.object === 'variable');
+// 	const variableNames = getAllJavaVariableNamesInWorkspace(workspacePath);
+// 	let nonMatchedVariables: any[] = [];
 
-	for (const rule of filteredRules) {
-		const regex = new RegExp(rule.pattern);
-		for (const variableName of variableNames) {
-			if (!regex.test(variableName)) {
-				const javaFiles = getAllFilesInDirectory(workspacePath, '.java');
-				for (const javaFile of javaFiles) {
-					const fileContent = fs.readFileSync(javaFile, 'utf8');
-					const contentWithoutComments = removeJavaComments(fileContent);
-					const position = getVariablePositionInText(contentWithoutComments, variableName);
-					if (position) {
-						nonMatchedVariables.push({
-							variableName: variableName,
-							message: rule.message,
-							severity: rule.severity,
-							file: javaFile,
-							row: position.row,
-							col: position.col,
-							hyperlink: createVSCodeHyperlink(javaFile, position.row, position.col)
-						});
-						break; // Break once the first instance is found, remove this if you want all instances
-					}
-				}
-			}
-		}
-	}
+// 	for (const rule of filteredRules) {
+// 		const regex = new RegExp(rule.pattern);
+// 		for (const variableName of variableNames) {
+// 			if (!regex.test(variableName)) {
+// 				const javaFiles = getAllFilesInDirectory(workspacePath, '.java');
+// 				for (const javaFile of javaFiles) {
+// 					const fileContent = fs.readFileSync(javaFile, 'utf8');
+// 					const contentWithoutComments = removeJavaComments(fileContent);
+// 					const position = getVariablePositionInText(contentWithoutComments, variableName);
+// 					if (position) {
+// 						nonMatchedVariables.push({
+// 							variableName: variableName,
+// 							message: rule.message,
+// 							severity: rule.severity,
+// 							file: javaFile,
+// 							row: position.row,
+// 							col: position.col,
+// 							hyperlink: createVSCodeHyperlink(javaFile, position.row, position.col),
+// 							quickfix: createVSCodeHyperlinkWithQuickFix(javaFile, position.row, position.col, variableName)
 
-	return nonMatchedVariables;
-}
+// 						});
+// 						break; // Break once the first instance is found, remove this if you want all instances
+// 					}
+// 				}
+// 			}
+// 		}
+// 	}
 
+// 	return nonMatchedVariables;
+// }
+
+// function createVSCodeHyperlinkWithQuickFix(filePath: string, row: number, col: number, variableName: string): string {
+//     const absolutePath = path.resolve(filePath);
+//     let uriPath: string;
+//     uriPath = 'file:///' + absolutePath.replace(/\\/g, '/');
+
+//     const newVariableName = `gmu_${variableName}`;
+//     const commandToExecute = `vscode.commands.executeCommand('editor.action.insertSnippet', { 'snippet': '${newVariableName}' })`;
+
+//     return `${uriPath}#L${row},${col}:fix:${encodeURIComponent(commandToExecute)}`;
+// }
 
 function writeNonMatchingVariablesToJSON(workspacePath: string, nonMatchedVariables: any[]) {
 	const jsonFilePath = path.join(workspacePath, 'nonMatchingVariables.json');
@@ -216,25 +228,6 @@ function removeJavaComments(content: string): string {
 
 	return noComments;
 }
-
-
-
-// export function activate(context: vscode.ExtensionContext) {
-// 	let disposable = vscode.commands.registerCommand('extension.listJavaClasses', () => {
-// 		const workspaceFolders = vscode.workspace.workspaceFolders;
-// 		if (workspaceFolders && workspaceFolders.length) {
-// 			const workspacePath = workspaceFolders[0].uri.fsPath;
-// 			const nonMatchedClasses = getClassNamesNotMatchingRules(workspacePath);
-// 			writeNonMatchingClassNamesToJSON(workspacePath, nonMatchedClasses);
-// 			const nonMatchedVariables = getVariablesNotMatchingRules(workspacePath);
-// 			writeNonMatchingVariablesToJSON(workspacePath, nonMatchedVariables);
-// 		} else {
-// 			vscode.window.showErrorMessage('No workspace found!');
-// 		}
-// 	});
-
-// 	context.subscriptions.push(disposable);
-// }
 
 export function activate(context: vscode.ExtensionContext) {
 	let disposable = vscode.commands.registerCommand('extension.listJavaClasses', () => {
@@ -267,6 +260,8 @@ export function activate(context: vscode.ExtensionContext) {
 									row: position.row,
 									col: position.col,
 									hyperlink: createVSCodeHyperlink(javaFile, position.row, position.col)
+									//quickfix: createVSCodeHyperlinkWithQuickFix(javaFile, position.row, position.col, variableName)
+
 								});
 								break; // Break once the first instance is found, remove this if you want all instances
 							}
@@ -275,7 +270,24 @@ export function activate(context: vscode.ExtensionContext) {
 				}
 			}
 
-			writeNonMatchingClassNamesToJSON(workspacePath, parsedResults.nonMatchingClasses);
+			const filteredRulesClass = rules.rules.filter((rule: any) => rule.type === 'style' && rule.object === 'class');
+			const classNames = parsedResults.nonMatchingClasses;
+			let nonMatchedClasses: any[] = [];
+
+			for (const rule of filteredRulesClass) {
+				const regex = new RegExp(rule.pattern);
+				for (const className of classNames) {
+					if (!regex.test(className)) {
+						nonMatchedClasses.push({
+							className: className,
+							message: rule.message,
+							severity: rule.severity
+						});
+					}
+				}
+			}
+
+			writeNonMatchingClassNamesToJSON(workspacePath, nonMatchedClasses);
 			writeNonMatchingVariablesToJSON(workspacePath, nonMatchedVariables);
 		} else {
 			vscode.window.showErrorMessage('No workspace found!');
