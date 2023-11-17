@@ -4,6 +4,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as cp from 'child_process';
+import { systemDefaultPlatform } from '@vscode/test-electron/out/util';
 
 function runJavaParserOnWorkspace(workspacePath: string): any {
 	// const jarPath = path.join(__dirname, 'JdtParserExample.jar');
@@ -43,12 +44,39 @@ function writeNonMatchingClassNamesToJSON(workspacePath: string, nonMatchedClass
 	vscode.window.showInformationMessage('Non-matching classes written to nonMatchingClasses.json!');
 }
 
+function writeAllMissingJavadocsClassToJSON(workspacePath: string, missingJavadocsClass: any[]) {
+	const jsonFilePath = path.join(workspacePath, 'missingJavadocsClass.json');
+	const jsonData = {
+		missingJavadocsClass: missingJavadocsClass
+	};
+	fs.writeFileSync(jsonFilePath, JSON.stringify(jsonData, null, 4), 'utf8');
+	vscode.window.showInformationMessage('Non-matching classes written to missingJavadocsClass.json!');
+}
+
+function writeAllMissingJavadocsMethodToJSON(workspacePath: string, missingJavadocsMethod: any[]) {
+	const jsonFilePath = path.join(workspacePath, 'missingJavadocsMethod.json');
+	const jsonData = {
+		missingJavadocsMethod: missingJavadocsMethod
+	};
+	fs.writeFileSync(jsonFilePath, JSON.stringify(jsonData, null, 4), 'utf8');
+	vscode.window.showInformationMessage('Non-matching classes written to missingJavadocsMethod.json!');
+}
+
 function getVariablePositionInText(text: string, variableName: string): { row: number, col: number } | null {
 	const lines = text.split('\n');
 	for (let i = 0; i < lines.length; i++) {
+
+		const trimmedLine = lines[i].trimStart();
+		if (trimmedLine.startsWith('/') || trimmedLine.startsWith('*')) {
+			continue; // Skip this line if it starts with '/' or '*'
+		}
+
 		const col = lines[i].indexOf(variableName);
 		if (col !== -1) {
-			return { row: i + 1, col: col + 1 }; // +1 to make it human-friendly (1-indexed)
+			const charAfterVar = lines[i].charAt(col + variableName.length);
+			if (charAfterVar == ' ' || charAfterVar == ',' || charAfterVar == ';' || charAfterVar == '') {
+				return { row: i + 1, col: col + 1 }; // +1 to make it human-friendly (1-indexed)
+			}
 		}
 	}
 	return null;
@@ -88,7 +116,7 @@ export function activate(context: vscode.ExtensionContext) {
 		if (workspaceFolders && workspaceFolders.length) {
 			const workspacePath = workspaceFolders[0].uri.fsPath;
 			const parsedResults = runJavaParserOnWorkspace(workspacePath);
-
+			const javaFiles = getAllFilesInDirectory(workspacePath, '.java');
 
 			const rules = readRulesFromJSON(workspacePath);
 			const filteredRules = rules.rules.filter((rule: any) => rule.type === 'style' && rule.object === 'variable');
@@ -99,11 +127,11 @@ export function activate(context: vscode.ExtensionContext) {
 				const regex = new RegExp(rule.pattern);
 				for (const variableName of variableNames) {
 					if (!regex.test(variableName)) {
-						const javaFiles = getAllFilesInDirectory(workspacePath, '.java');
+
 						for (const javaFile of javaFiles) {
 							const fileContent = fs.readFileSync(javaFile, 'utf8');
-							const contentWithoutComments = removeJavaComments(fileContent);
-							const position = getVariablePositionInText(contentWithoutComments, variableName);
+							//const contentWithoutComments = removeJavaComments(fileContent);
+							const position = getVariablePositionInText(fileContent, variableName);
 							if (position) {
 								nonMatchedVariables.push({
 									variableName: variableName,
@@ -121,6 +149,44 @@ export function activate(context: vscode.ExtensionContext) {
 					}
 				}
 			}
+
+			const allMissingJavadocsClass = parsedResults.missingJavadocsClass;
+			const allMissingJavadocsMethod = parsedResults.missingJavadocsMethod;
+			let missingJavadocsClass: any[] = [];
+			let missingJavadocsMethod: any[] = [];
+
+			for (const className of allMissingJavadocsClass) {
+				missingJavadocsClass.push({
+					className: className,
+					message: 'JavaDoc Comments are missing for the Class',
+					severity: 'Warning'
+				});
+			}
+
+			for (const methodName of allMissingJavadocsMethod) {
+
+				for (const javaFile of javaFiles) {
+					const fileContent = fs.readFileSync(javaFile, 'utf8');
+					//const contentWithoutComments = removeJavaComments(fileContent);
+					const position = getVariablePositionInText(fileContent, methodName);
+					if (position) {
+						missingJavadocsMethod.push({
+							methodName: methodName,
+							message: 'JavaDoc Comments are missing for the Method',
+							severity: 'Warning',
+							file: javaFile,
+							row: position.row,
+							col: position.col,
+							hyperlink: createVSCodeHyperlink(javaFile, position.row, position.col)
+
+						});
+						break; // Break once the first instance is found, remove this if you want all instances
+					}
+				}
+
+			}
+			writeAllMissingJavadocsClassToJSON(workspacePath, missingJavadocsClass);
+			writeAllMissingJavadocsMethodToJSON(workspacePath, missingJavadocsMethod);
 
 			const filteredRulesClass = rules.rules.filter((rule: any) => rule.type === 'style' && rule.object === 'class');
 			const classNames = parsedResults.nonMatchingClasses;
