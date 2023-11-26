@@ -1,6 +1,7 @@
 {
-  "name": "helloworld",
-  "displayName": "HelloWorld",
+  "name": "DevReview360",
+  "displayName": "DevReview360",
+  "publisher": "dipak28",
   "description": "",
   "version": "0.0.1",
   "engines": {
@@ -17,7 +18,7 @@
     "commands": [
       {
         "command": "extension.listJavaClasses",
-        "title": "List All Java Classes"
+        "title": "DevReview360"
       }
     ]
   },
